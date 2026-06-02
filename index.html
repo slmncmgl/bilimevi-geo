@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilimevi — AI Arama Görünürlüğü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--red:#C0392B;--red-light:#FADBD8;--red-text:#922B21;
+--orange:#E67E22;--orange-light:#FDEBD0;--orange-text:#A04000;
+--blue:#2471A3;--blue-light:#D6EAF8;--blue-text:#1A5276;
+--gray:#7F8C8D;--gray-light:#F2F3F4;--gray-text:#566573;
+--green:#1E8449;--green-light:#D5F5E3;--green-text:#145A32;
+--yellow:#D4AC0D;--yellow-light:#FEF9E7;--yellow-text:#9A7D0A;
+--border:#E8E8E8;--bg:#F8F7F5;--card:#FFFFFF;--text:#1A1A1A;--muted:#6B6B6B;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+.header{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:56px}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{width:28px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo svg{width:16px;height:16px;fill:white}
+.site-info h1{font-size:14px;font-weight:600;color:var(--text)}
+.site-info p{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-toggle{display:flex;align-items:center;gap:8px;background:var(--gray-light);border-radius:20px;padding:4px 6px 4px 12px;cursor:pointer;border:1px solid var(--border);transition:all .2s}
+.user-toggle:hover{border-color:#aaa}
+.user-name{font-size:13px;font-weight:500}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.sync-btn{display:flex;align-items:center;gap:6px;background:var(--text);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s}
+.sync-btn:hover{opacity:.85}
+.sync-btn.syncing{opacity:.6;pointer-events:none}
+.refresh-btn{display:flex;align-items:center;gap:6px;background:#fff;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s}
+.refresh-btn:hover{background:var(--gray-light)}
+
+/* STATS */
+.stats-bar{padding:16px 24px;display:grid;grid-template-columns:180px 1fr 1fr 1fr 1fr;gap:12px;border-bottom:1px solid var(--border);background:#fff}
+.score-card{background:var(--gray-light);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.score-ring{position:relative;width:52px;height:52px;flex-shrink:0}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring .ring-bg{fill:none;stroke:#E0E0E0;stroke-width:5}
+.score-ring .ring-fg{fill:none;stroke:var(--red);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.score-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.score-info{flex:1}
+.score-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.score-pts{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;margin-top:2px}
+.score-total{font-size:11px;color:var(--muted)}
+.stat-card{background:var(--gray-light);border-radius:10px;padding:12px 16px}
+.stat-card .s-label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-bottom:4px;font-weight:500}
+.stat-card .s-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace}
+.stat-card .s-sub{font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-red{background:var(--red)}
+.dot-orange{background:var(--orange)}
+.dot-green{background:var(--green)}
+.dot-blue{background:var(--blue)}
+
+/* MAIN */
+.main{padding:20px 24px;max-width:1100px}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;cursor:pointer;user-select:none}
+.section-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.section-badge{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:500}
+.badge-critical{background:var(--red-light);color:var(--red-text)}
+.badge-high{background:var(--orange-light);color:var(--orange-text)}
+.badge-medium{background:var(--blue-light);color:var(--blue-text)}
+.badge-low{background:var(--gray-light);color:var(--gray-text)}
+.section-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+.progress-bar{height:3px;background:#EAEAEA;border-radius:2px;margin-bottom:2px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s ease;background:var(--green)}
+.chevron{font-size:16px;color:var(--muted);transition:transform .2s}
+.section-tasks{display:flex;flex-direction:column;gap:1px;margin-bottom:20px}
+.section-block{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+
+/* TASK */
+.task-row{border-bottom:1px solid var(--border);background:#fff;transition:background .15s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:#FAFAFA}
+.task-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer}
+.task-check{width:20px;height:20px;border-radius:50%;border:1.5px solid #CCC;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-check.done svg{display:block}
+.task-check.progress{background:var(--yellow-light);border-color:var(--yellow)}
+.task-check svg{display:none;width:11px;height:11px;fill:white}
+.task-name{flex:1;font-size:13px;font-weight:500;color:var(--text)}
+.task-name.done-text{color:var(--muted);text-decoration:line-through}
+.task-tags{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.impact-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap}
+.impact-critical{background:var(--red-light);color:var(--red-text)}
+.impact-high{background:var(--orange-light);color:var(--orange-text)}
+.impact-medium{background:var(--blue-light);color:var(--blue-text)}
+.impact-low{background:var(--gray-light);color:var(--gray-text)}
+.off-topic{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:#FFF3CD;color:#856404;white-space:nowrap}
+.score-bar-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.score-pips{display:flex;gap:2px}
+.pip{width:6px;height:6px;border-radius:1px;background:#E0E0E0}
+.pip.filled-critical{background:var(--red)}
+.pip.filled-high{background:var(--orange)}
+.pip.filled-medium{background:var(--blue)}
+.pip.filled-low{background:var(--gray)}
+.score-num{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;color:var(--muted);min-width:16px;text-align:right}
+.task-expand-icon{color:var(--muted);font-size:12px;flex-shrink:0;transition:transform .2s}
+
+/* TASK DETAIL */
+.task-detail{display:none;padding:0 14px 14px;border-top:1px solid #F0F0F0}
+.task-detail.open{display:block}
+.detail-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;padding-top:12px}
+.howto-box{background:#F8F7F5;border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.howto-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.howto-text{font-size:12px;color:var(--blue-text);line-height:1.5}
+.howto-text strong{font-weight:600;display:block;margin-bottom:3px;color:var(--blue)}
+.detail-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status-btns{display:flex;gap:4px}
+.status-btn{font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;color:var(--muted)}
+.status-btn:hover{border-color:#aaa}
+.status-btn.active-notstarted{background:#F5F5F5;border-color:#CCC;color:var(--text)}
+.status-btn.active-inprogress{background:var(--yellow-light);border-color:var(--yellow);color:var(--yellow-text)}
+.status-btn.active-completed{background:var(--green-light);border-color:var(--green);color:var(--green-text)}
+.note-input{flex:1;min-width:180px;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;resize:none;height:32px;overflow:hidden;transition:border .15s}
+.note-input:focus{outline:none;border-color:#aaa}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* SEARCH */
+.toolbar{padding:12px 24px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.search-wrap{position:relative;flex:1;max-width:320px}
+.search-wrap input{width:100%;border:1px solid var(--border);border-radius:8px;padding:6px 10px 6px 32px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text)}
+.search-wrap input:focus{outline:none;border-color:#aaa}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--muted)}
+.filter-btns{display:flex;gap:4px}
+.filter-btn{font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);transition:all .15s}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <svg viewBox="0 0 16 16"><path d="M8 1L2 5v6l6 4 6-4V5L8 1zm0 2l4 2.7v4.6L8 13l-4-2.7V5.7L8 3z"/></svg>
+    </div>
+    <div class="site-info">
+      <h1>AI Arama Görünürlüğü Kontrol Listesi</h1>
+      <p>bilimevi.com</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="user-toggle" onclick="toggleUser()" title="Kullanıcıyı değiştir">
+      <span class="user-name" id="userName">İlkay</span>
+      <div class="user-avatar" id="userAvatar">İ</div>
+    </div>
+    <button class="refresh-btn" onclick="loadFromSheets()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      Yenile
+    </button>
+    <button class="sync-btn" onclick="saveToSheets()" id="syncBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Sheets'e Kaydet
+    </button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="score-card">
+    <div class="score-ring">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle class="ring-bg" cx="26" cy="26" r="21"/>
+        <circle class="ring-fg" id="ringFg" cx="26" cy="26" r="21" stroke-dasharray="132" stroke-dashoffset="132"/>
+      </svg>
+      <div class="score-pct" id="scorePct">0%</div>
+    </div>
+    <div class="score-info">
+      <div class="score-label">GEO Skoru</div>
+      <div class="score-pts" id="scorePts">0</div>
+      <div class="score-total" id="scoreTotal">/ 0 pts</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="s-label"><span class="dot dot-blue"></span>Toplam</div>
+    <div class="s-val" id="statTotal">64</div>
+    <div class="s-sub">görev</div>
+  </div>
+  <div class="stat-card">
+    <div class="s-label"><span class="dot dot-green"></span>Tamamlandı</div>
+    <div class="s-val" id="statDone">0</div>
+    <div class="s-sub">/ 64</div>
+  </div>
+  <div class="stat-card">
+    <div class="s-label"><span class="dot dot-orange"></span>Devam Ediyor</div>
+    <div class="s-val" id="statProg">0</div>
+    <div class="s-sub">görev</div>
+  </div>
+  <div class="stat-card">
+    <div class="s-label"><span class="dot dot-red"></span>Kritik Bekleyen</div>
+    <div class="s-val" id="statCrit">0</div>
+    <div class="s-sub">acil</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Görev ara..." oninput="filterTasks()">
+  </div>
+  <div class="filter-btns">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Tümü</button>
+    <button class="filter-btn" onclick="setFilter('not-started',this)">Başlanmadı</button>
+    <button class="filter-btn" onclick="setFilter('in-progress',this)">Devam Ediyor</button>
+    <button class="filter-btn" onclick="setFilter('completed',this)">Tamamlandı</button>
+    <button class="filter-btn" onclick="setFilter('off-topic',this)">⚠️ Düşük Uyum</button>
+  </div>
+</div>
+
+<div class="main" id="mainContent"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzycZ9j2VM7KOGFNuPpbEPKJ9_NMvsoev8oBteJyejVev7cT9Y3D5zZk300v9e_tvTB/exec";
+
+let currentUser = "İlkay";
+let activeFilter = "all";
+let taskStates = {};
+
+const TASKS = [
+  {phase:1,section:"Teknik AI Hazırlığı",sectionBadge:"critical",tasks:[
+    {id:"t01",name:"AI Bot Crawling — robots.txt İzni",impact:"critical",score:10,offTopic:false,
+     desc:"GPTBot, ClaudeBot, PerplexityBot, Google-Extended ve Bingbot'un robots.txt dosyanızda engellenip engellenmediğini doğrulayın.",
+     howto:"robots.txt dosyasını açın, 'User-agent: GPTBot / Disallow: /' gibi satırlar varsa kaldırın. Tüm büyük AI tarayıcılarını açıkça izin listesine ekleyin."},
+    {id:"t02",name:"Temel Sayfaların İndekslenebilirliği",impact:"critical",score:10,offTopic:false,
+     desc:"Ülke sayfalarınız, üniversite tanıtımlarınız ve hizmet sayfalarınızın AI botlarca okunabilir olduğundan emin olun.",
+     howto:"Google Search Console > Kapsam raporunu inceleyin. noindex etiketli veya robots.txt'te engellenen sayfalara dikkat edin."},
+    {id:"t03",name:"AI Özet / Snippet İzni",impact:"critical",score:9,offTopic:false,
+     desc:"Yapay zekanın sitenizden doğrudan alıntı ve önizleme çekebilmesine izin verin.",
+     howto:"Meta robots taglarında 'nosnippet' veya 'max-snippet:0' kullanmıyorsanız sorun yok. Varsa kaldırın."},
+    {id:"t04",name:"İçeriğin Taranabilir HTML'de Olması",impact:"critical",score:9,offTopic:false,
+     desc:"Vize evrakları, fiyat tabloları, başvuru şartları gibi kritik bilgilerin görsel içinde değil, okunabilir HTML'de olduğundan emin olun.",
+     howto:"Sayfa kaynak kodunu inceleyin. Tablo veya liste içerikler resim olarak mı yoksa metin olarak mı gösteriliyor kontrol edin."},
+    {id:"t05",name:"XML Site Haritasını Tüm Motorlara Gönder",impact:"high",score:8,offTopic:false,
+     desc:"Site haritanızı Google, Bing ve diğer motorlara güncel olarak sunun.",
+     howto:"Search Console ve Bing Webmaster Tools panellerinden sitemap.xml URL'ini girin ve gönderin."},
+    {id:"t06",name:"Core Web Vitals ve Sayfa Hızı",impact:"high",score:7,offTopic:false,
+     desc:"Sitenizin hızlı açılması ve mobil performansı hem kullanıcı hem bot için standart zorunluluktur.",
+     howto:"PageSpeed Insights (pagespeed.web.dev) ile tüm ana sayfaları test edin. LCP < 2.5s, CLS < 0.1 hedefleyin."},
+    {id:"t07",name:"Kırık Linkler ve Yönlendirme Hatalarını Temizle",impact:"high",score:7,offTopic:false,
+     desc:"Sitedeki 404 veren kırık linkleri ve redirect zincirlerini temizleyin.",
+     howto:"Screaming Frog veya Ahrefs Site Audit ile tarama yapın. Kırık linkleri düzeltin veya 301 yönlendirme ekleyin."},
+    {id:"t08",name:"Mobil Uyumlu Görüntüleme",impact:"medium",score:6,offTopic:false,
+     desc:"Sitenin mobil cihazlarda düzgün göründüğünden emin olun. AI motorları mobil deneyimi değerlendirir.",
+     howto:"Google Mobile-Friendly Test ile kontrol edin. Bootstrap veya responsive CSS kullanıyorsanız büyük sorun olmamalı."},
+  ]},
+  {phase:1,section:"Kurumsal Güven & E-E-A-T",sectionBadge:"critical",tasks:[
+    {id:"t09",name:"Marka Bilgisi Tutarlılığı (NAP)",impact:"critical",score:10,offTopic:false,
+     desc:"Bilimevi'nin adı, adresi, telefonu ve şubeleri tüm internette birebir aynı olmalı. Çelişkili bilgi AI güvenini düşürür.",
+     howto:"Google Business, sosyal medya profilleri, dizin siteleri ve kendi sitenizde NAP bilgilerini karşılaştırın. Tek tek güncelleyin."},
+    {id:"t10",name:"Organization Schema Ekle",impact:"critical",score:10,offTopic:false,
+     desc:"Sitenin bir 'Yurtdışı Eğitim Danışmanlık Şirketi' olduğunu yapay zekaya Schema.org yapısıyla bildirin.",
+     howto:"schema.org/Organization tipinde JSON-LD kodu yazın. name, url, address, telephone, sameAs (sosyal medya) alanlarını doldurun. <head> içine ekleyin."},
+    {id:"t11",name:"Google Business Profile Oluştur / Optimize Et",impact:"critical",score:10,offTopic:false,
+     desc:"Harita kayıtları ve buradaki öğrenci yorumları AI modellerinin en büyük beslenme kaynağıdır.",
+     howto:"business.google.com adresinden profilinizi talep edin. Fotoğraf, hizmet kategorisi, çalışma saatleri ve açıklama ekleyin."},
+    {id:"t12",name:"Kapsamlı Hakkımızda Sayfası",impact:"high",score:8,offTopic:false,
+     desc:"Hakkımızda sayfasını başarı oranları, lisanslar (TURSAB, UED vb.) ve kurumsal tarihçeyle güçlendirin.",
+     howto:"Kuruluş yılı, gönderilen öğrenci sayısı, çalışılan ülke sayısı gibi somut veriler ekleyin. Resmi belgelerin fotoğraflarını koyun."},
+    {id:"t13",name:"Danışman Yazar Sayfaları Oluştur",impact:"high",score:8,offTopic:false,
+     desc:"Sitedeki rehberleri yazan eğitim danışmanları için uzmanlık belirten yazar sayfaları açın.",
+     howto:"Her danışman için /yazar/isim-soyisim URL'li bir sayfa oluşturun. Eğitim, uzmanlık alanı, deneyim yılı bilgilerini ekleyin."},
+    {id:"t14",name:"Author / Person Schema",impact:"high",score:8,offTopic:false,
+     desc:"Yazar sayfalarını şema kodlarıyla destekleyerek AI'a 'bu içeriği anonim biri değil, bir uzman yazdı' mesajı verin.",
+     howto:"Her yazar sayfasına schema.org/Person JSON-LD ekleyin. name, jobTitle, knowsAbout, worksFor alanlarını doldurun."},
+    {id:"t15",name:"Tüm Yapısal Verileri Doğrula",impact:"high",score:7,offTopic:false,
+     desc:"Sitedeki tüm Schema kodlarının hatasız çalıştığını test edin.",
+     howto:"Google Rich Results Test (search.google.com/test/rich-results) ve Schema Markup Validator ile tüm sayfaları kontrol edin."},
+  ]},
+  {phase:1,section:"AI Görünürlük İzleme (Başlangıç)",sectionBadge:"high",tasks:[
+    {id:"t16",name:"AI Alıntı Takibi Kur",impact:"high",score:8,offTopic:false,
+     desc:"ChatGPT veya Perplexity'ye 'İstanbul'daki en iyi yurtdışı eğitim danışmanlığı' yazınca çıkıyor musunuz? Takibini başlatın.",
+     howto:"Aylık düzenli sorgular yapın ve sonuçları not alın. Brand24 veya Mention gibi araçlarla otomatik izleme kurun."},
+    {id:"t17",name:"Google Search Console — AI Overviews İzleme",impact:"high",score:7,offTopic:false,
+     desc:"Google'ın AI arama sonuçlarında (SGE) sitenizin aldığı trafiği panelden izleyin.",
+     howto:"Search Console > Arama Sonuçları > 'AI Overview görüntülemeleri' filtresini aktive edin. Hangi sorguların AI özeti getirdiğini görün."},
+    {id:"t18",name:"Hedef Anahtar Kelimeler için AI Görünürlük Denetimi",impact:"medium",score:6,offTopic:false,
+     desc:"'Almanya üniversite başvurusu' gibi aramalarda yapay zekanın hangi siteleri kaynak gösterdiğini analiz edin.",
+     howto:"ChatGPT, Perplexity ve Google AI Overviews'de sektör sorgularınızı test edin. Kaynak gösterilen sitelerin içerik yapısını inceleyin."},
+    {id:"t19",name:"Rakip İçerik Boşluklarını Tespit Et",impact:"medium",score:6,offTopic:false,
+     desc:"AI'ın rakiplerden alıntıladığı ama Bilimevi sitesinde eksik olan konuları tespit edin.",
+     howto:"AI motorlarında rakip sorguları yapın. 'Bu bilgiyi neden rakipten alıyor, bizden değil?' sorusunu sorun ve içerik takvimi oluşturun."},
+  ]},
+  {phase:2,section:"AI Dostu İçerik Yapısı",sectionBadge:"high",tasks:[
+    {id:"t20",name:"Doğrudan Cevap Özetleri (Giriş Özeti)",impact:"high",score:9,offTopic:false,
+     desc:"Blog veya ülke sayfalarının başına AI'ın cımbızla çekebileceği 2-3 cümlelik net özet koyun.",
+     howto:"Her sayfanın ilk paragrafını 'Bu sayfada X konusunu öğreneceksiniz: [net tanım]' formatında yazın. Soru varsa soruyu ilk cümlede cevaplayın."},
+    {id:"t21",name:"H1-H3 Başlık Hiyerarşisi",impact:"high",score:8,offTopic:false,
+     desc:"Botların sayfayı kolay tarayıp hangi başlık altında ne anlatıldığını anlaması için net yapı kurun.",
+     howto:"Her sayfada tek H1, bölümler için H2, alt konular için H3 kullanın. Başlıklar keyword içermeli ama doğal okunmalı."},
+    {id:"t22",name:"FAQ Bölümleri Ekle",impact:"high",score:8,offTopic:false,
+     desc:"Sayfa altlarına Sıkça Sorulan Sorular alanları açın (Örn: 'İngiltere'de okurken çalışabilir miyim?').",
+     howto:"Her önemli içerik sayfasına en az 4-5 soruluk FAQ bölümü ekleyin. Soruları öğrencilerin gerçekten sorduğu şekilde yazın."},
+    {id:"t23",name:"FAQ Schema Ekle",impact:"high",score:8,offTopic:false,
+     desc:"Sıkça sorulan soruları Schema.org/FAQPage yapısıyla besleyerek AI'ın doğrudan algılamasını sağlayın.",
+     howto:"Her FAQ sorusu için JSON-LD FAQPage şeması oluşturun. @type:Question ve acceptedAnswer alanlarını doldurun."},
+    {id:"t24",name:"Key Takeaways Bölümleri",impact:"medium",score:6,offTopic:false,
+     desc:"Uzun sayfaların başına veya sonuna 'Önemli Çıkarımlar' kutuları ekleyin.",
+     howto:"Mavi veya gri kutucuk içinde madde madde 3-5 önemli bilgiyi özetleyin. AI bu kutuları hızlı tarar."},
+    {id:"t25",name:"Madde ve Numaralı Listeler",impact:"high",score:8,offTopic:false,
+     desc:"Gerekli evraklar, başvuru adımları, şartlar gibi içerikleri madde listesi olarak verin.",
+     howto:"Düz paragraf yerine <ul>/<ol> kullanın. Her madde tek bir bilgi içermeli, max 2 satır olmalı."},
+    {id:"t26",name:"Tanım Kutuları (Definition Boxes)",impact:"medium",score:6,offTopic:false,
+     desc:"Sektörel terimler için özel tanım kutuları oluşturun (Schengen Vizesi, ECTS Kredisi, IELTS vb.).",
+     howto:"Tüm teknik terimleri vurgulayın ve sayfa içinde küçük 'Terim Nedir?' kutusuyla veya ayrı bir sözlük sayfasıyla açıklayın."},
+    {id:"t27",name:"Karşılaştırma Tabloları",impact:"medium",score:7,offTopic:false,
+     desc:"'İngiltere vs. İrlanda Dil Okulu Maliyetleri' gibi karşılaştırma tabloları hazırlayın. AI tabloları çok sever.",
+     howto:"HTML <table> kullanın. Başlık satırını <thead> ile işaretleyin. Tablo mobilde yatay kaydırmalı olsun."},
+  ]},
+  {phase:2,section:"Eğitim İçerik Stratejisi",sectionBadge:"high",tasks:[
+    {id:"t28",name:"Pillar / Cluster İçerik Mimarisi",impact:"high",score:9,offTopic:false,
+     desc:"'Almanya'da Eğitim' ana sütun sayfanız olsun; 'Almanya Dil Okulları', 'Almanya'da Ücretsiz Üniversite' gibi sayfaları ona bağlayın.",
+     howto:"Her hedef ülke için kapsamlı bir ana sayfa oluşturun. Alt sayfaları ana sayfaya iç linklemeyle bağlayın."},
+    {id:"t29",name:"Ana Konular İçin Kapsamlı Rehberler",impact:"high",score:9,offTopic:false,
+     desc:"Ana odak ülkeleriniz için eksiksiz, dev rehber içerikleri üretin.",
+     howto:"'Almanya'da Eğitim Tam Rehberi 2025' gibi başlıklarla en az 2000+ kelimelik kapsamlı içerikler yazın. Tüm alt soruları yanıtlayın."},
+    {id:"t30",name:"Uzun Kuyruklu / Konuşma Sorguları",impact:"high",score:8,offTopic:false,
+     desc:"Öğrencilerin yapay zekaya sorduğu sesli/uzun sorulara odaklanın ('Lise mezunuyum, İtalya'da nasıl tıp okurum?').",
+     howto:"'People Also Ask' bölümlerini ve forum sorularını inceleyin. Bu soruları içerik başlıklarına dönüştürün."},
+    {id:"t31",name:"Alıntılanabilir İstatistik ve Veriler",impact:"high",score:9,offTopic:false,
+     desc:"İçeriklerinize sayısal veriler ekleyin ('2025 verilerine göre Polonya'da aylık yurt ücretleri X Euro'dur').",
+     howto:"Resmi üniversite sitelerinden, konsolosluk verilerinden ve kendi deneyimlerinizden güncel rakamlar toplayın. Tarih verin."},
+    {id:"t32",name:"Uzman Alıntıları ve Atıf",impact:"medium",score:6,offTopic:false,
+     desc:"Yazılara uzman danışman görüşleri veya üniversite yetkililerinin demeçlerini ekleyin.",
+     howto:"Danışmanlarınızın yorumlarını tırnak içinde ve isim-unvanıyla birlikte ekleyin. AI alıntıları kaynak olarak gösterir."},
+    {id:"t33",name:"Birincil Kaynaklara Atıf",impact:"medium",score:7,offTopic:false,
+     desc:"Konsolosluklara veya resmi üniversite sitelerine link vererek güvenilirliğinizi kanıtlayın.",
+     howto:"Vize bilgisi, başvuru tarihleri ve şartlar için resmi kaynak linklerini açıkça gösterin. 'Kaynak: [resmi site]' formatı kullanın."},
+    {id:"t34",name:"İçerik Güncellik Sinyalleri",impact:"high",score:8,offTopic:false,
+     desc:"Eğitim fiyatları ve vize kuralları sürekli değiştiğinden içeriklerin güncellenme tarihlerini AI'a gösterin.",
+     howto:"Her sayfaya 'Son güncelleme: Ay Yıl' bilgisi ekleyin. Schema lastReviewed alanını doldurun. Eski içerikleri yıllık güncelleyin."},
+    {id:"t35",name:"Özgün Araştırma ve Veri",impact:"high",score:8,offTopic:false,
+     desc:"Kendi gönderdiğiniz öğrencilerin memnuniyet oranları veya yerleşme istatistikleri gibi özgün raporlar yayınlayın.",
+     howto:"Yıllık 'Bilimevi Öğrenci Memnuniyeti Raporu' gibi bir içerik üretin. AI özgün verileri kaynak göstermeyi sever."},
+    {id:"t36",name:"Çoklu Format İçerik",impact:"medium",score:6,offTopic:false,
+     desc:"Yazıların içine bilgilendirici videolar, infografikler veya broşür PDF'leri yerleştirin.",
+     howto:"YouTube'a yüklediğiniz danışman videolarını ilgili sayfalara embed edin. Canva ile görsel özet infografikler yapın."},
+    {id:"t37",name:"Okunabilirlik ve Taranabilirlik",impact:"medium",score:6,offTopic:false,
+     desc:"Kullanıcıların ve botların sayfayı gözüyle kolayca tarayabilmesi için paragraf kalabalığını önleyin.",
+     howto:"Maks 3-4 cümlelik paragraflar kullanın. Alt başlıkları sık koyun. Önemli bilgileri bold yapın."},
+    {id:"t38",name:"Breadcrumb Schema",impact:"medium",score:5,offTopic:false,
+     desc:"'Ana Sayfa > Avrupa > Almanya' yapısını botlara da gösterin.",
+     howto:"Her sayfaya BreadcrumbList JSON-LD şeması ekleyin. Ayrıca görsel breadcrumb navigasyonu kullanıyorsanız markup'ı eşleştirin."},
+  ]},
+  {phase:3,section:"İtibar Yönetimi (Off-Site)",sectionBadge:"high",tasks:[
+    {id:"t39",name:"Forum ve Yorum Takibi",impact:"high",score:8,offTopic:false,
+     desc:"Ekşi Sözlük, Şikayetvar, Reddit veya forumlarda Bilimevi adının geçtiği yerleri izleyin. AI buraları tarar.",
+     howto:"Google Alerts'e 'Bilimevi' kelimesini ekleyin. Brand24 veya benzer araçlarla sosyal medya ve forum takibi yapın."},
+    {id:"t40",name:"Detaylı Müşteri Yorumları Teşvik Et",impact:"critical",score:10,offTopic:false,
+     desc:"Öğrencilerden Google'da anahtar kelimeli, detaylı yorumlar isteyin ('Bilimevi sayesinde Polonya vizesi aldım').",
+     howto:"Süreç tamamlandıktan sonra öğrenciye kısa bir WhatsApp mesajıyla yorum linki gönderin. Nasıl yorum yazacaklarını örnekle gösterin."},
+    {id:"t41",name:"Kaliteli Backlink Edinimi",impact:"high",score:8,offTopic:false,
+     desc:"Eğitim blogları, haber siteleri veya üniversite platformlarından Bilimevi'ne link sağlayın.",
+     howto:"Eğitim portallarına misafir yazı teklif edin. Üniversitelerle iş birliği yapın. Sektörel dizin sitelerine kayıt olun."},
+    {id:"t42",name:"Sektörel Tartışmalara Katılım",impact:"medium",score:5,offTopic:false,
+     desc:"Sektörel etkinliklerde, online eğitim panellerinde kurumsal olarak yer alın.",
+     howto:"Eğitim fuarları, webinarlar ve LinkedIn gruplarında aktif olun. Konuşmacı olarak yer almak en yüksek otoriteyi sağlar."},
+    {id:"t43",name:"Yüksek Otoriteli Platformlarda Yayın",impact:"medium",score:6,offTopic:false,
+     desc:"Büyük haber sitelerinde veya eğitim portallarında Bilimevi uzmanlarının makalelerini yayınlatın.",
+     howto:"Milliyet, Hürriyet Eğitim, Sabah Eğitim veya YÖK bağlantılı portallara içerik önerin. Byline önemli, kurumsal imza alın."},
+    {id:"t44",name:"Olumsuz Yorumlara Profesyonel Yanıt",impact:"high",score:7,offTopic:false,
+     desc:"İnternetteki olumsuz yorumlara kurumsal ve çözüm odaklı yanıtlar verin.",
+     howto:"Her olumsuz yoruma 48 saat içinde yanıt verin. 'Durumu inceliyoruz, sizinle iletişime geçeceğiz' formatında başlayın, çözümü kamuya açık yazın."},
+  ]},
+  {phase:3,section:"Rekabet Analizi",sectionBadge:"medium",tasks:[
+    {id:"t45",name:"AI Alıntı Pazar Payı Ölçümü",impact:"medium",score:6,offTopic:false,
+     desc:"Yapay zeka sonuçlarında rakiplerinizin ve sizin ne kadar sıklıkla kaynak gösterildiğinizi ölçün.",
+     howto:"Aylık 20-30 sektör sorgusu yapın. Her sorguda kaynak gösterilen siteleri listeleyin. Bilimevi'nin oran değişimini takip edin."},
+    {id:"t46",name:"Alıntılanan Rakip İçerikleri Analiz Et",impact:"medium",score:6,offTopic:false,
+     desc:"Rakiplerin AI tarafından sürekli alıntılanan yazılarını inceleyip neden alıntılandığını anlayın.",
+     howto:"Rakip yazının yapısına bakın: özet var mı? FAQ var mı? Veri var mı? Neleri iyi yapıyor, kopyalayın — içerik değil, strateji."},
+    {id:"t47",name:"Rakip AI Alıntılarını İzle",impact:"medium",score:5,offTopic:false,
+     desc:"Rakiplerinizin yapay zeka üzerindeki anlık görünürlük artışlarını düzenli takip edin.",
+     howto:"Rakip markaları da Brand24 takip listesine ekleyin. Ani yükselişlerde ne yaptıklarını analiz edin."},
+  ]},
+  {phase:3,section:"Teknik Performans & Raporlama",sectionBadge:"medium",tasks:[
+    {id:"t48",name:"ChatGPT / AI Referral Trafiği Takibi",impact:"high",score:7,offTopic:false,
+     desc:"Google Analytics'te sitenize ChatGPT, Perplexity veya Claude'dan gelen trafiği izleyin.",
+     howto:"GA4 > Raporlar > Edinme > Trafik kaynağı. chat.openai.com, perplexity.ai gibi kaynak domainleri filtreleyin."},
+    {id:"t49",name:"Aylık Kontrollü Prompt Testleri",impact:"medium",score:6,offTopic:false,
+     desc:"Her ay düzenli olarak farklı prompt'larla AI motorlarını test edin ('Ekonomik dil okulu için hangi acenteyi önerirsin?').",
+     howto:"Aylık test takvimi oluşturun. Her test için 10-15 farklı sorgu hazırlayın. Sonuçları spreadsheet'e kaydedin."},
+    {id:"t50",name:"AI Arama Performans Dashboard'u",impact:"medium",score:5,offTopic:false,
+     desc:"Tüm yapay zeka trafiğini ve görünürlük skorlarını ekibin görebileceği tek bir raporda toplayın.",
+     howto:"Google Looker Studio veya basit bir Google Sheets dashboard kurun. Haftalık otomatik rapor için Apps Script kullanın."},
+  ]},
+  {phase:4,section:"Dolaylı Fayda & Düşük Uyumlu Maddeler",sectionBadge:"low",tasks:[
+    {id:"t51",name:"Yönetici / Ekip Düşünce Liderliği",impact:"medium",score:5,offTopic:false,
+     desc:"Şirket yöneticilerinin sektörel makaleler yazarak öne çıkması marka güvenini dolaylı besler.",
+     howto:"LinkedIn'de haftada 1-2 kez sektörel içerik paylaşın. Yöneticiler kendi profillerinden paylaşım yapmalı."},
+    {id:"t52",name:"LinkedIn Profil Güncellemesi",impact:"low",score:4,offTopic:false,
+     desc:"Danışmanlarınızın LinkedIn profillerinin güncel olması AI'ın çalışan profesyonelliğini doğrulamasına yardımcı olur.",
+     howto:"Tüm danışmanların LinkedIn profillerini inceleyin. Unvan, şirket ve uzmanlık alanları güncel ve tutarlı olmalı."},
+    {id:"t53",name:"Sektörel Dizin Listeleri",impact:"low",score:4,offTopic:false,
+     desc:"Yerel veya sektörel rehber sitelerinde yer almak temel bir backlink ve doğrulama adımıdır.",
+     howto:"Yurtdışı eğitim, TURSAB veya UED dizinlerine kayıt olun. Bilgi tutarlılığına dikkat edin."},
+    {id:"t54",name:"Wikipedia / Wikidata Varlığı",impact:"low",score:3,offTopic:false,
+     desc:"Wikidata veya Wikipedia'da kurumsal sayfa açmak AI için güçlü bir veri kaynağı olabilir; ancak danışmanlık firmaları için onaylanması zordur.",
+     howto:"Wikidata'da (wikidata.org) kurumunuz için varlık oluşturun. Wikipedia için 'önemlilik kriteri' şartını karşılamanız gerekir."},
+    {id:"t55",name:"Site İçi Linkleme",impact:"medium",score:6,offTopic:false,
+     desc:"Sayfalara aralarında linkleme yapın. Standart SEO için çok önemli, AI taramasına dolaylı yardım eder.",
+     howto:"Her blog yazısına en az 3-5 iç link ekleyin. Ülke sayfaları ve hizmet sayfaları birbirine bağlı olmalı."},
+    {id:"t56",name:"Zayıf / Mükerrer İçerikleri Temizle",impact:"medium",score:5,offTopic:false,
+     desc:"Sitedeki boş veya birbirinin aynısı olan eski içerikleri temizleyin.",
+     howto:"Screaming Frog ile kısa içerik (< 300 kelime) ve mükerrer meta başlık tespiti yapın. Konsolide edin veya silin."},
+    {id:"t57",name:"Görsellere Alt Text Ekle",impact:"medium",score:5,offTopic:false,
+     desc:"Kampüs veya ofis resimlerine 'X Üniversitesi Kampüsü' gibi alt metinler yazın.",
+     howto:"Tüm <img> taglarına alt='[açıklayıcı metin]' ekleyin. Anahtar kelime doğal olarak geçebiliyorsa geçirin."},
+    {id:"t58",name:"Meta Etiketleri AI Önizlemeleri İçin Yapılandır",impact:"medium",score:5,offTopic:false,
+     desc:"AI'ın sayfanızı özetlerken kullanacağı meta açıklamaları kontrol altına alın.",
+     howto:"Her sayfaya 150-160 karakter arası, o sayfanın özünü yansıtan meta description yazın. Anahtar kelime içermeli."},
+    {id:"t59",name:"AI Eğitim Opt-Out Tercihlerini Gözden Geçir",impact:"low",score:3,offTopic:false,
+     desc:"Sitenizdeki bilgilerin yapay zeka eğitiminde kullanılıp kullanılmayacağını kontrol edin. Bilimevi için açık kalması avantajdır.",
+     howto:"robots.txt'te 'GPTBot: Disallow' gibi eğitim engelleyen direktifler olup olmadığını kontrol edin. Yoksa bir şey yapmanıza gerek yok."},
+    {id:"t60",name:"HowTo Schema — Adım Adım İçerikler",impact:"medium",score:5,offTopic:false,
+     desc:"'Vize Başvurusu Nasıl Yapılır?' gibi adım adım süreç içeren yazılara HowTo şeması ekleyin.",
+     howto:"schema.org/HowTo JSON-LD ekleyin. Her adım için HowToStep ve açıklama alanlarını doldurun."},
+    {id:"t61",name:"⚠️ Product Schema (E-Ticaret İçin)",impact:"low",score:2,offTopic:true,
+     desc:"Eğitim danışmanlığı bir ürün satışı değil, hizmettir. Sitede online kurs veya paket program satmıyorsanız etkisi yok denecek kadar azdır.",
+     howto:"Eğer ileride online kurs veya sabit fiyatlı paket satmaya başlarsanız schema.org/Product ekleyebilirsiniz. Şimdilik Service şeması öncelikli."},
+    {id:"t62",name:"⚠️ IndexNow Protocol",impact:"low",score:2,offTopic:true,
+     desc:"Günde binlerce yeni sayfa ekleyen devasa e-ticaret siteleri için tasarlanmıştır. Bilimevi için standart XML sitemap yeterli.",
+     howto:"Eğer ileride çok hızlı büyüme yaşanırsa IndexNow.org üzerinden API key alabilirsiniz. Şimdilik aciliyet yok."},
+    {id:"t63",name:"⚠️ ai.txt Protokolü",impact:"low",score:2,offTopic:true,
+     desc:"Henüz tam standartlaşmamış, yeni bir protokoldür. AI botlarına izin ve kısıtlama kuralları belirlemenizi sağlar.",
+     howto:"ai.txt taslağını incelemeniz yeterli. Standartlaştığında eklemeniz için domain kök dizinine basit bir dosya koymak gerekecek."},
+    {id:"t64",name:"⚠️ Yeni AI Platformları Takibi",impact:"low",score:2,offTopic:true,
+     desc:"Niş ve yeni çıkan yapay zeka motorlarını kovalamak şu aşamada Bilimevi'ne vakit kaybettirir.",
+     howto:"Ana odak: Google AI Overviews, ChatGPT, Claude ve Perplexity. Yeni platformları yılda bir gözden geçirmeniz yeterli."},
+  ]},
+];
+
+let expandedSections = {};
+let expandedTasks = {};
+
+function init(){
+  loadLocal();
+  renderAll();
+  updateStats();
+  loadFromSheets();
+}
+
+function loadLocal(){
+  const saved = localStorage.getItem('bilimevi_geo_v2');
+  if(saved) taskStates = JSON.parse(saved);
+  const u = localStorage.getItem('bilimevi_user');
+  if(u){ currentUser=u; document.getElementById('userName').textContent=u; document.getElementById('userAvatar').textContent=u[0]; }
+}
+
+function saveLocal(){
+  localStorage.setItem('bilimevi_geo_v2', JSON.stringify(taskStates));
+  localStorage.setItem('bilimevi_user', currentUser);
+}
+
+function toggleUser(){
+  currentUser = currentUser==='İlkay'?'Selman':'İlkay';
+  document.getElementById('userName').textContent=currentUser;
+  document.getElementById('userAvatar').textContent=currentUser[0];
+  saveLocal();
+  showToast('Kullanıcı: '+currentUser);
+}
+
+function setStatus(id, status){
+  if(!taskStates[id]) taskStates[id]={status:'not-started',notes:''};
+  taskStates[id].status=status;
+  taskStates[id].updatedBy=currentUser;
+  taskStates[id].updatedAt=new Date().toISOString();
+  saveLocal();
+  refreshTaskUI(id);
+  updateStats();
+}
+
+function setNotes(id, val){
+  if(!taskStates[id]) taskStates[id]={status:'not-started',notes:''};
+  taskStates[id].notes=val;
+  taskStates[id].updatedBy=currentUser;
+  taskStates[id].updatedAt=new Date().toISOString();
+  saveLocal();
+}
+
+function getStatus(id){ return taskStates[id]?.status||'not-started'; }
+function getNotes(id){ return taskStates[id]?.notes||''; }
+
+function toggleSection(phaseSection){
+  expandedSections[phaseSection]=!expandedSections[phaseSection];
+  const el=document.getElementById('sec-'+phaseSection);
+  const ch=document.getElementById('ch-'+phaseSection);
+  if(el) el.style.display=expandedSections[phaseSection]?'flex':'none';
+  if(ch) ch.style.transform=expandedSections[phaseSection]?'rotate(180deg)':'rotate(0deg)';
+}
+
+function toggleTask(id){
+  expandedTasks[id]=!expandedTasks[id];
+  const el=document.getElementById('detail-'+id);
+  const ic=document.getElementById('ticon-'+id);
+  if(el) el.className='task-detail'+(expandedTasks[id]?' open':'');
+  if(ic) ic.style.transform=expandedTasks[id]?'rotate(180deg)':'rotate(0deg)';
+}
+
+function refreshTaskUI(id){
+  const s=getStatus(id);
+  const check=document.getElementById('check-'+id);
+  const nameEl=document.getElementById('tname-'+id);
+  if(check){
+    check.className='task-check'+(s==='completed'?' done':s==='in-progress'?' progress':'');
+    check.querySelector('svg').style.display=s==='completed'?'block':'none';
+  }
+  if(nameEl) nameEl.className='task-name'+(s==='completed'?' done-text':'');
+  ['ns','ip','cp'].forEach(k=>{
+    const b=document.getElementById('btn-'+k+'-'+id);
+    if(!b) return;
+    b.className='status-btn';
+    if(k==='ns'&&s==='not-started') b.className='status-btn active-notstarted';
+    if(k==='ip'&&s==='in-progress') b.className='status-btn active-inprogress';
+    if(k==='cp'&&s==='completed') b.className='status-btn active-completed';
+  });
+}
+
+function updateStats(){
+  let totalPts=0,earnedPts=0,done=0,prog=0,crit=0;
+  TASKS.forEach(sec=>sec.tasks.forEach(t=>{
+    totalPts+=t.score;
+    const s=getStatus(t.id);
+    if(s==='completed'){earnedPts+=t.score;done++;}
+    else if(s==='in-progress'){earnedPts+=Math.floor(t.score/2);prog++;}
+    if(s!=='completed'&&t.impact==='critical') crit++;
+  }));
+  const pct=totalPts>0?Math.round(earnedPts/totalPts*100):0;
+  document.getElementById('scorePct').textContent=pct+'%';
+  document.getElementById('scorePts').textContent=earnedPts;
+  document.getElementById('scoreTotal').textContent='/ '+totalPts+' pts';
+  document.getElementById('statDone').textContent=done;
+  document.getElementById('statProg').textContent=prog;
+  document.getElementById('statCrit').textContent=crit;
+  const circ=2*Math.PI*21;
+  const offset=circ*(1-pct/100);
+  const ring=document.getElementById('ringFg');
+  if(ring){ring.style.strokeDasharray=circ;ring.style.strokeDashoffset=offset;
+    ring.style.stroke=pct===0?'#C0392B':pct<40?'#E67E22':pct<80?'#D4AC0D':'#1E8449';}
+  TASKS.forEach(sec=>{
+    const sId=sec.phase+'_'+sec.section.replace(/\s/g,'_');
+    let sDone=0,sTotal=sec.tasks.length;
+    sec.tasks.forEach(t=>{ if(getStatus(t.id)==='completed') sDone++; });
+    const pf=document.getElementById('pf-'+sId);
+    const pm=document.getElementById('pm-'+sId);
+    if(pf) pf.style.width=(sTotal>0?Math.round(sDone/sTotal*100):0)+'%';
+    if(pm) pm.textContent=sDone+'/'+sTotal;
+  });
+}
+
+function impactLabel(i){return{critical:'Kritik',high:'Yüksek Etki',medium:'Orta Etki',low:'Düşük Etki'}[i]||i;}
+function impactClass(i){return{critical:'impact-critical',high:'impact-high',medium:'impact-medium',low:'impact-low'}[i]||'impact-low';}
+function pipClass(i){return{critical:'filled-critical',high:'filled-high',medium:'filled-medium',low:'filled-low'}[i]||'filled-low';}
+function sectionBadgeClass(b){return{critical:'badge-critical',high:'badge-high',medium:'badge-medium',low:'badge-low'}[b]||'badge-low';}
+function sectionBadgeLabel(b){return{critical:'Kritik','high':'Yüksek Öncelik',medium:'Orta Öncelik',low:'Düşük Öncelik'}[b]||b;}
+function phaseLabel(p){return{1:'Aşama 1',2:'Aşama 2',3:'Aşama 3',4:'Aşama 4'}[p]||'Aşama '+p;}
+
+function buildPips(score,impact){
+  let h='';
+  for(let i=0;i<10;i++) h+=`<div class="pip${i<score?' '+pipClass(impact):''}"></div>`;
+  return h;
+}
+
+function renderAll(){
+  const c=document.getElementById('mainContent');
+  let html='';
+  TASKS.forEach(sec=>{
+    const sId=sec.phase+'_'+sec.section.replace(/\s/g,'_');
+    const isOpen=expandedSections[sId]!==false;
+    if(!expandedSections.hasOwnProperty(sId)) expandedSections[sId]=true;
+    html+=`
+    <div onclick="toggleSection('${sId}')" class="section-head">
+      <div class="section-title">
+        <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${phaseLabel(sec.phase)}</span>
+        <span>${sec.section}</span>
+        <span class="section-badge ${sectionBadgeClass(sec.sectionBadge)}">${sectionBadgeLabel(sec.sectionBadge)}</span>
+      </div>
+      <div class="section-meta">
+        <div style="width:80px">
+          <div class="progress-bar"><div class="progress-fill" id="pf-${sId}" style="width:0%"></div></div>
+        </div>
+        <span id="pm-${sId}">0/${sec.tasks.length}</span>
+        <span style="font-size:16px;color:var(--muted);transition:transform .2s" id="ch-${sId}"${isOpen?'':' style="transform:rotate(0deg)"'}>›</span>
+      </div>
+    </div>
+    <div class="section-tasks">
+      <div class="section-block" id="sec-${sId}" style="display:${isOpen?'flex':'none'};flex-direction:column">`;
+    sec.tasks.forEach(t=>{
+      const s=getStatus(t.id);
+      html+=`
+        <div class="task-row" id="row-${t.id}">
+          <div class="task-header" onclick="toggleTask('${t.id}')">
+            <div class="task-check${s==='completed'?' done':s==='in-progress'?' progress':''}" id="check-${t.id}" onclick="event.stopPropagation();cycleStatus('${t.id}')">
+              <svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="task-name${s==='completed'?' done-text':''}" id="tname-${t.id}">${t.name}</span>
+            <div class="task-tags">
+              ${t.offTopic?'<span class="off-topic">⚠️ Düşük Uyum</span>':''}
+              <span class="impact-badge ${impactClass(t.impact)}">${impactLabel(t.impact)}</span>
+              <div class="score-bar-wrap">
+                <div class="score-pips">${buildPips(t.score,t.impact)}</div>
+                <span class="score-num">${t.score}</span>
+              </div>
+            </div>
+            <span class="task-expand-icon" id="ticon-${t.id}" style="transition:transform .2s">›</span>
+          </div>
+          <div class="task-detail" id="detail-${t.id}">
+            <p class="detail-desc">${t.desc}</p>
+            <div class="howto-box">
+              <span class="howto-icon">💡</span>
+              <div class="howto-text"><strong>Nasıl Yapılır</strong>${t.howto}</div>
+            </div>
+            <div class="detail-controls">
+              <div class="status-btns">
+                <button class="status-btn${s==='not-started'?' active-notstarted':''}" id="btn-ns-${t.id}" onclick="setStatus('${t.id}','not-started')">Başlanmadı</button>
+                <button class="status-btn${s==='in-progress'?' active-inprogress':''}" id="btn-ip-${t.id}" onclick="setStatus('${t.id}','in-progress')">Devam Ediyor</button>
+                <button class="status-btn${s==='completed'?' active-completed':''}" id="btn-cp-${t.id}" onclick="setStatus('${t.id}','completed')">Tamamlandı</button>
+              </div>
+              <textarea class="note-input" id="note-${t.id}" placeholder="Not ekle..." onblur="setNotes('${t.id}',this.value)">${getNotes(t.id)}</textarea>
+            </div>
+          </div>
+        </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  c.innerHTML=html;
+}
+
+function cycleStatus(id){
+  const current=getStatus(id);
+  const next={['not-started']:'in-progress','in-progress':'completed','completed':'not-started'};
+  setStatus(id,next[current]||'not-started');
+}
+
+let filterMode='all';
+function setFilter(f,btn){
+  filterMode=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTasks();
+}
+
+function filterTasks(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  TASKS.forEach(sec=>{
+    sec.tasks.forEach(t=>{
+      const row=document.getElementById('row-'+t.id);
+      if(!row) return;
+      const s=getStatus(t.id);
+      let show=true;
+      if(q&&!t.name.toLowerCase().includes(q)&&!t.desc.toLowerCase().includes(q)) show=false;
+      if(filterMode==='not-started'&&s!=='not-started') show=false;
+      if(filterMode==='in-progress'&&s!=='in-progress') show=false;
+      if(filterMode==='completed'&&s!=='completed') show=false;
+      if(filterMode==='off-topic'&&!t.offTopic) show=false;
+      row.style.display=show?'':'none';
+    });
+  });
+}
+
+async function saveToSheets(){
+  const btn=document.getElementById('syncBtn');
+  btn.classList.add('syncing');
+  btn.textContent='Kaydediliyor...';
+  const promises=[];
+  TASKS.forEach(sec=>sec.tasks.forEach(t=>{
+    const s=taskStates[t.id]||{};
+    promises.push(fetch(SHEETS_URL,{
+      method:'POST',
+      body:JSON.stringify({task_id:t.id,status:s.status||'not-started',notes:s.notes||'',updated_by:currentUser})
+    }));
+  }));
+  try{
+    await Promise.all(promises);
+    showToast('✓ Sheets\'e kaydedildi');
+  }catch(e){
+    showToast('Hata: Bağlantı sorunu');
+  }
+  btn.classList.remove('syncing');
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Sheets\'e Kaydet';
+}
+
+async function loadFromSheets(){
+  showToast('Veriler yükleniyor...');
+  try{
+    const res=await fetch(SHEETS_URL);
+    const data=await res.json();
+    if(Array.isArray(data)&&data.length>0){
+      data.forEach(row=>{
+        if(row.task_id){
+          taskStates[row.task_id]={status:row.status||'not-started',notes:row.notes||'',updatedBy:row.updated_by||'',updatedAt:row.updated_at||''};
+        }
+      });
+      saveLocal();
+      TASKS.forEach(sec=>sec.tasks.forEach(t=>refreshTaskUI(t.id)));
+      TASKS.forEach(sec=>sec.tasks.forEach(t=>{
+        const ni=document.getElementById('note-'+t.id);
+        if(ni) ni.value=getNotes(t.id);
+      }));
+      updateStats();
+      showToast('✓ Veriler güncellendi');
+    } else { showToast('Sheets boş — yerel veri kullanılıyor'); }
+  }catch(e){ showToast('Sheets bağlantısı kurulamadı'); }
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+init();
+</script>
+</body>
+</html>
