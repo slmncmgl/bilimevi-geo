@@ -475,16 +475,28 @@ function setStatus(id, status){
   taskStates[id].updatedBy=currentUser;
   taskStates[id].updatedAt=new Date().toISOString();
   saveLocal();
+  if(pushSheets && val.trim()!==""){
+    const s=taskStates[id];
+    fetch(SHEETS_URL,{method:"POST",body:JSON.stringify({task_id:id,status:s.status||"not-started",notes:val,updated_by:currentUser})})
+      .then(()=>showToast("✓ Not kaydedildi"))
+      .catch(()=>showToast("Not locale kaydedildi, Sheets bağlantısı yok"));
+  }
   refreshTaskUI(id);
   updateStats();
 }
 
-function setNotes(id, val){
+function setNotes(id, val, pushSheets=false){
   if(!taskStates[id]) taskStates[id]={status:'not-started',notes:''};
   taskStates[id].notes=val;
   taskStates[id].updatedBy=currentUser;
   taskStates[id].updatedAt=new Date().toISOString();
   saveLocal();
+  if(pushSheets && val.trim()!==""){
+    const s=taskStates[id];
+    fetch(SHEETS_URL,{method:"POST",body:JSON.stringify({task_id:id,status:s.status||"not-started",notes:val,updated_by:currentUser})})
+      .then(()=>showToast("✓ Not kaydedildi"))
+      .catch(()=>showToast("Not locale kaydedildi, Sheets bağlantısı yok"));
+  }
 }
 
 function getStatus(id){ return taskStates[id]?.status||'not-started'; }
@@ -625,7 +637,7 @@ function renderAll(){
                 <button class="status-btn${s==='in-progress'?' active-inprogress':''}" id="btn-ip-${t.id}" onclick="setStatus('${t.id}','in-progress')">Devam Ediyor</button>
                 <button class="status-btn${s==='completed'?' active-completed':''}" id="btn-cp-${t.id}" onclick="setStatus('${t.id}','completed')">Tamamlandı</button>
               </div>
-              <textarea class="note-input" id="note-${t.id}" placeholder="Not ekle..." onblur="setNotes('${t.id}',this.value)">${getNotes(t.id)}</textarea>
+              <textarea class="note-input" id="note-${t.id}" placeholder="Not ekle..." onblur="setNotes('${t.id}',this.value,true)">${getNotes(t.id)}</textarea>
             </div>
           </div>
         </div>`;
