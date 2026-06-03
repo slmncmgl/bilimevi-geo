@@ -112,14 +112,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .howto-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .howto-text{font-size:14px;color:var(--blue-text);line-height:1.5}
 .howto-text strong{font-weight:600;display:block;margin-bottom:3px;color:var(--blue)}
-.detail-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.detail-controls{display:flex;flex-direction:column;gap:10px}
 .status-btns{display:flex;gap:4px}
 .status-btn{font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;color:var(--muted)}
 .status-btn:hover{border-color:#aaa}
 .status-btn.active-notstarted{background:#F5F5F5;border-color:#CCC;color:var(--text)}
 .status-btn.active-inprogress{background:var(--yellow-light);border-color:var(--yellow);color:var(--yellow-text)}
 .status-btn.active-completed{background:var(--green-light);border-color:var(--green);color:var(--green-text)}
-.note-input{flex:1;min-width:180px;font-size:14px;border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;resize:none;height:32px;overflow:hidden;transition:border .15s}
+.note-input{width:100%;font-size:14px;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;resize:vertical;min-height:80px;transition:border .15s;line-height:1.5}
 .note-input:focus{outline:none;border-color:#aaa}
 
 /* TOAST */
